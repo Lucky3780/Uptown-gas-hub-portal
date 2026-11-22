@@ -1,0 +1,1071 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.1.0
+  description: Uptown Gas Hub affiliate portal API
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: auth
+    description: Authentication and account recovery
+  - name: portal
+    description: Affiliate dashboard and activity
+  - name: admin
+    description: Affiliate, refill, payout, and settings administration
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      description: Returns server health status
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+  /auth/csrf:
+    get:
+      operationId: getCsrfToken
+      tags: [auth]
+      summary: Get a CSRF token
+      responses:
+        "200":
+          description: CSRF token for form submissions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CsrfToken"
+  /auth/me:
+    get:
+      operationId: getCurrentUser
+      tags: [auth]
+      summary: Get the signed-in user
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PortalUser"
+        "401":
+          description: Not signed in
+  /auth/register:
+    post:
+      operationId: registerAffiliate
+      tags: [auth]
+      summary: Register a new affiliate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterInput"
+      responses:
+        "201":
+          description: Account awaiting approval
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PortalUser"
+        "400":
+          description: Invalid registration details
+        "409":
+          description: Email already registered
+  /auth/login:
+    post:
+      operationId: loginUser
+      tags: [auth]
+      summary: Sign in with email and password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginInput"
+      responses:
+        "200":
+          description: Signed-in user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PortalUser"
+        "401":
+          description: Invalid credentials
+  /auth/logout:
+    post:
+      operationId: logoutUser
+      tags: [auth]
+      summary: Sign out the current user
+      responses:
+        "200":
+          description: Signed out
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ActionResult"
+  /auth/forgot-password:
+    post:
+      operationId: requestPasswordReset
+      tags: [auth]
+      summary: Request a password reset link
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ForgotPasswordInput"
+      responses:
+        "200":
+          description: Reset request accepted without revealing account existence
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ActionResult"
+  /auth/reset-password:
+    post:
+      operationId: resetPassword
+      tags: [auth]
+      summary: Set a new password using a reset token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ResetPasswordInput"
+      responses:
+        "200":
+          description: Password reset
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ActionResult"
+        "400":
+          description: Reset token is invalid or expired
+  /dashboard:
+    get:
+      operationId: getDashboard
+      tags: [portal]
+      summary: Get role-specific dashboard metrics and recent activity
+      responses:
+        "200":
+          description: Dashboard data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Dashboard"
+  /sales:
+    get:
+      operationId: listMySales
+      tags: [portal]
+      summary: List the signed-in affiliate's refills
+      responses:
+        "200":
+          description: Affiliate's refill history
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Refill"
+  /commissions:
+    get:
+      operationId: listMyCommissions
+      tags: [portal]
+      summary: List the signed-in affiliate's commission ledger
+      responses:
+        "200":
+          description: Affiliate commission ledger
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Commission"
+  /leaderboard:
+    get:
+      operationId: getLeaderboard
+      tags: [portal]
+      summary: Get the affiliate leaderboard
+      parameters:
+        - in: query
+          name: period
+          required: false
+          schema:
+            type: string
+            enum: [week, month, all_time]
+        - in: query
+          name: metric
+          required: false
+          schema:
+            type: string
+            enum: [refills, revenue, earnings]
+      responses:
+        "200":
+          description: Ranked affiliate results
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/LeaderboardEntry"
+  /payouts:
+    get:
+      operationId: listMyPayouts
+      tags: [portal]
+      summary: List the signed-in affiliate's payout requests
+      responses:
+        "200":
+          description: Affiliate payout requests
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Payout"
+    post:
+      operationId: requestPayout
+      tags: [portal]
+      summary: Request a payout from available commissions
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PayoutRequestInput"
+      responses:
+        "201":
+          description: Payout request created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Payout"
+        "400":
+          description: Amount is below the configured minimum or balance
+  /notifications:
+    get:
+      operationId: listMyNotifications
+      tags: [portal]
+      summary: List notifications for the signed-in affiliate
+      responses:
+        "200":
+          description: Notification queue
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Notification"
+  /notifications/{id}:
+    patch:
+      operationId: updateNotification
+      tags: [portal]
+      summary: Mark a notification sent or retry it
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NotificationActionInput"
+      responses:
+        "200":
+          description: Notification updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Notification"
+  /admin/affiliates:
+    get:
+      operationId: listAffiliates
+      tags: [admin]
+      summary: List affiliates for review and reporting
+      parameters:
+        - in: query
+          name: status
+          required: false
+          schema:
+            type: string
+            enum: [pending, approved, rejected, suspended, all]
+      responses:
+        "200":
+          description: Affiliate accounts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Affiliate"
+  /admin/affiliates/{id}:
+    patch:
+      operationId: reviewAffiliate
+      tags: [admin]
+      summary: Approve, reject, or suspend an affiliate
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AffiliateReviewInput"
+      responses:
+        "200":
+          description: Affiliate status updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Affiliate"
+  /admin/sales:
+    get:
+      operationId: listAllSales
+      tags: [admin]
+      summary: List and filter all refill records
+      parameters:
+        - in: query
+          name: status
+          required: false
+          schema:
+            type: string
+            enum: [pending, approved, voided, all]
+      responses:
+        "200":
+          description: Refill records
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Refill"
+    post:
+      operationId: createRefill
+      tags: [admin]
+      summary: Record a refill against a referral code
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RefillInput"
+      responses:
+        "201":
+          description: Refill created and awaiting approval
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Refill"
+        "400":
+          description: Invalid refill data or unknown referral code
+  /admin/sales/{id}:
+    patch:
+      operationId: reviewRefill
+      tags: [admin]
+      summary: Approve or void a refill and update its commission
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RefillReviewInput"
+      responses:
+        "200":
+          description: Refill status updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Refill"
+  /admin/tiers:
+    get:
+      operationId: listTiers
+      tags: [admin]
+      summary: Get configurable tier thresholds and rates
+      responses:
+        "200":
+          description: Configured affiliate tiers
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Tier"
+  /admin/tiers/{id}:
+    patch:
+      operationId: updateTier
+      tags: [admin]
+      summary: Update a tier threshold or commission rate
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TierInput"
+      responses:
+        "200":
+          description: Tier updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Tier"
+  /admin/payouts:
+    get:
+      operationId: listAllPayouts
+      tags: [admin]
+      summary: List payout requests for review and payment
+      parameters:
+        - in: query
+          name: status
+          required: false
+          schema:
+            type: string
+            enum: [pending, approved, processing, rejected, paid, all]
+      responses:
+        "200":
+          description: Payout requests
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Payout"
+  /admin/payouts/{id}:
+    patch:
+      operationId: reviewPayout
+      tags: [admin]
+      summary: Approve, reject, or mark a payout as paid
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PayoutReviewInput"
+      responses:
+        "200":
+          description: Payout status updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Payout"
+  /admin/settings:
+    get:
+      operationId: getAdminSettings
+      tags: [admin]
+      summary: Get portal configuration
+      responses:
+        "200":
+          description: Current portal settings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PortalSettings"
+    put:
+      operationId: updateAdminSettings
+      tags: [admin]
+      summary: Update payout and notification settings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PortalSettingsInput"
+      responses:
+        "200":
+          description: Portal settings updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PortalSettings"
+  /admin/reports.csv:
+    get:
+      operationId: exportAdminReport
+      tags: [admin]
+      summary: Download an approved refill and commission CSV
+      responses:
+        "200":
+          description: CSV report
+          content:
+            text/csv:
+              schema:
+                type: string
+  /mpesa/b2c/result:
+    post:
+      operationId: receiveMpesaB2cResult
+      tags: [admin]
+      summary: Receive an authenticated Daraja B2C payment result
+      parameters:
+        - in: query
+          name: token
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MpesaB2cResultInput"
+      responses:
+        "200":
+          description: Callback accepted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ActionResult"
+  /mpesa/b2c/timeout:
+    post:
+      operationId: receiveMpesaB2cTimeout
+      tags: [admin]
+      summary: Receive a Daraja B2C queue timeout notification
+      parameters:
+        - in: query
+          name: token
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MpesaB2cTimeoutInput"
+      responses:
+        "200":
+          description: Callback acknowledged
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ActionResult"
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
+    ActionResult:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+      required: [success, message]
+    CsrfToken:
+      type: object
+      properties:
+        token:
+          type: string
+      required: [token]
+    PortalUser:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        phone:
+          type: ["string", "null"]
+        role:
+          type: string
+          enum: [affiliate, admin]
+        status:
+          type: string
+          enum: [pending, approved, rejected, suspended]
+        referralCode:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, name, email, phone, role, status, referralCode, createdAt]
+    RegisterInput:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 2
+          maxLength: 120
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 10
+          maxLength: 128
+        phone:
+          type: string
+          minLength: 9
+          maxLength: 20
+      required: [name, email, password, phone]
+    LoginInput:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 1
+          maxLength: 128
+      required: [email, password]
+    ForgotPasswordInput:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+      required: [email]
+    ResetPasswordInput:
+      type: object
+      properties:
+        token:
+          type: string
+          minLength: 32
+        password:
+          type: string
+          minLength: 10
+          maxLength: 128
+      required: [token, password]
+    Dashboard:
+      type: object
+      properties:
+        account:
+          $ref: "#/components/schemas/PortalUser"
+        stats:
+          $ref: "#/components/schemas/DashboardStats"
+        recentRefills:
+          type: array
+          items:
+            $ref: "#/components/schemas/Refill"
+        leaderboard:
+          type: array
+          items:
+            $ref: "#/components/schemas/LeaderboardEntry"
+        admin:
+          anyOf:
+            - $ref: "#/components/schemas/AdminDashboardStats"
+            - type: "null"
+      required: [account, stats, recentRefills, leaderboard, admin]
+    DashboardStats:
+      type: object
+      properties:
+        refillCount:
+          type: integer
+        revenueKES:
+          type: integer
+        commissionKES:
+          type: integer
+        availableKES:
+          type: integer
+        pendingPayoutKES:
+          type: integer
+        currentTier:
+          type: string
+        nextTier:
+          type: ["string", "null"]
+        tierProgress:
+          type: number
+        minimumPayoutKES:
+          type: integer
+      required: [refillCount, revenueKES, commissionKES, availableKES, pendingPayoutKES, currentTier, nextTier, tierProgress, minimumPayoutKES]
+    AdminDashboardStats:
+      type: object
+      properties:
+        pendingAffiliates:
+          type: integer
+        pendingRefills:
+          type: integer
+        pendingPayouts:
+          type: integer
+        monthRevenueKES:
+          type: integer
+        monthCommissionKES:
+          type: integer
+      required: [pendingAffiliates, pendingRefills, pendingPayouts, monthRevenueKES, monthCommissionKES]
+    Affiliate:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        phone:
+          type: ["string", "null"]
+        referralCode:
+          type: string
+        status:
+          type: string
+          enum: [pending, approved, rejected, suspended]
+        refillCount:
+          type: integer
+        revenueKES:
+          type: integer
+        commissionKES:
+          type: integer
+        availableKES:
+          type: integer
+        tierName:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, userId, name, email, phone, referralCode, status, refillCount, revenueKES, commissionKES, availableKES, tierName, createdAt]
+    Refill:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        affiliateId:
+          type: string
+          format: uuid
+        affiliateName:
+          type: string
+        referralCode:
+          type: string
+        customerName:
+          type: string
+        customerPhone:
+          type: ["string", "null"]
+        litres:
+          type: number
+        amountKES:
+          type: integer
+        status:
+          type: string
+          enum: [pending, approved, voided]
+        refillDate:
+          type: string
+          format: date
+        commissionKES:
+          type: integer
+        commissionPercent:
+          type: number
+        tierName:
+          type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, affiliateId, affiliateName, referralCode, customerName, customerPhone, litres, amountKES, status, refillDate, commissionKES, commissionPercent, tierName, notes, createdAt]
+    RefillInput:
+      type: object
+      properties:
+        referralCode:
+          type: string
+          minLength: 3
+          maxLength: 24
+        customerName:
+          type: string
+          minLength: 2
+          maxLength: 120
+        customerPhone:
+          type: string
+          maxLength: 20
+        litres:
+          type: number
+          exclusiveMinimum: 0
+          maximum: 10000
+        amountKES:
+          type: integer
+          minimum: 1
+        refillDate:
+          type: string
+          format: date
+        notes:
+          type: string
+          maxLength: 1000
+      required: [referralCode, customerName, litres, amountKES, refillDate]
+    RefillReviewInput:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [approved, voided]
+        reason:
+          type: string
+          maxLength: 500
+      required: [status]
+    Commission:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        refillId:
+          type: string
+          format: uuid
+        customerName:
+          type: string
+        amountKES:
+          type: integer
+        commissionPercent:
+          type: number
+        tierName:
+          type: string
+        status:
+          type: string
+          enum: [available, reserved, paid, voided]
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, refillId, customerName, amountKES, commissionPercent, tierName, status, createdAt]
+    Tier:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          enum: [Starter, Silver, Gold, Platinum]
+        sortOrder:
+          type: integer
+        thresholdMetric:
+          type: string
+          enum: [refills, revenue]
+        thresholdValue:
+          type: integer
+        commissionPercent:
+          type: number
+        period:
+          type: string
+          enum: [monthly, lifetime]
+        active:
+          type: boolean
+      required: [id, name, sortOrder, thresholdMetric, thresholdValue, commissionPercent, period, active]
+    TierInput:
+      type: object
+      properties:
+        thresholdMetric:
+          type: string
+          enum: [refills, revenue]
+        thresholdValue:
+          type: integer
+          minimum: 0
+        commissionPercent:
+          type: number
+          minimum: 0
+          maximum: 100
+        period:
+          type: string
+          enum: [monthly, lifetime]
+        active:
+          type: boolean
+      required: [thresholdMetric, thresholdValue, commissionPercent, period, active]
+    LeaderboardEntry:
+      type: object
+      properties:
+        rank:
+          type: integer
+        affiliateId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        tierName:
+          type: string
+        refillCount:
+          type: integer
+        revenueKES:
+          type: integer
+        earningsKES:
+          type: integer
+      required: [rank, affiliateId, name, tierName, refillCount, revenueKES, earningsKES]
+    Payout:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        affiliateId:
+          type: string
+          format: uuid
+        affiliateName:
+          type: string
+        amountKES:
+          type: integer
+        phone:
+          type: string
+        status:
+          type: string
+          enum: [pending, approved, processing, rejected, paid]
+        transactionReference:
+          type: ["string", "null"]
+        rejectionReason:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+          format: date-time
+        paidAt:
+          type: ["string", "null"]
+          format: date-time
+      required: [id, affiliateId, affiliateName, amountKES, phone, status, transactionReference, rejectionReason, createdAt, paidAt]
+    PayoutRequestInput:
+      type: object
+      properties:
+        amountKES:
+          type: integer
+          minimum: 1
+      required: [amountKES]
+    PayoutReviewInput:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [approved, rejected, paid]
+        transactionReference:
+          type: string
+          maxLength: 100
+        rejectionReason:
+          type: string
+          maxLength: 500
+      required: [status]
+    AffiliateReviewInput:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [approved, rejected, suspended]
+        reason:
+          type: string
+          maxLength: 500
+      required: [status]
+    Notification:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        recipientName:
+          type: string
+        eventType:
+          type: string
+        title:
+          type: string
+        message:
+          type: string
+        whatsappUrl:
+          type: ["string", "null"]
+        deliveryStatus:
+          type: string
+          enum: [queued, sent, failed]
+        attempts:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, recipientName, eventType, title, message, whatsappUrl, deliveryStatus, attempts, createdAt]
+    NotificationActionInput:
+      type: object
+      properties:
+        action:
+          type: string
+          enum: [mark_sent, retry]
+      required: [action]
+    PortalSettings:
+      type: object
+      properties:
+        minimumPayoutKES:
+          type: integer
+        referralBaseUrl:
+          type: string
+        whatsappProvider:
+          type: string
+          enum: [wa_me, meta_cloud]
+        whatsappEnabled:
+          type: boolean
+        mpesaMode:
+          type: string
+          enum: [manual, daraja]
+      required: [minimumPayoutKES, referralBaseUrl, whatsappProvider, whatsappEnabled, mpesaMode]
+    PortalSettingsInput:
+      type: object
+      properties:
+        minimumPayoutKES:
+          type: integer
+          minimum: 1
+        referralBaseUrl:
+          type: string
+          format: uri
+        whatsappProvider:
+          type: string
+          enum: [wa_me, meta_cloud]
+        whatsappEnabled:
+          type: boolean
+        mpesaMode:
+          type: string
+          enum: [manual, daraja]
+      required: [minimumPayoutKES, referralBaseUrl, whatsappProvider, whatsappEnabled, mpesaMode]
+    MpesaB2cResultInput:
+      type: object
+      properties:
+        Result:
+          type: object
+          properties:
+            ResultCode:
+              type: integer
+            ResultDesc:
+              type: string
+            OriginatorConversationID:
+              type: string
+            ConversationID:
+              type: string
+            TransactionID:
+              type: ["string", "null"]
+          required: [ResultCode, ResultDesc, OriginatorConversationID]
+      required: [Result]
+    MpesaB2cTimeoutInput:
+      type: object
+      additionalProperties: true
+

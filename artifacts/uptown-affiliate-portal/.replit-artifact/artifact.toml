@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "Uptown Gas Hub Affiliate Portal"
+description = "A secure partner portal for Kenyan LPG affiliates to share referrals, track refill commissions, view rank and request payouts, with an admin centre for sales and tier management."
+version = "1.0.0"
+id = "artifacts/uptown-affiliate-portal"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 25901
+
+[services.development]
+run = "pnpm --filter @workspace/uptown-affiliate-portal run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/uptown-affiliate-portal", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/uptown-affiliate-portal/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "25901"
+BASE_PATH = "/"
