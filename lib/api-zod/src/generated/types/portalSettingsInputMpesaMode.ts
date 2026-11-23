@@ -11,5 +11,4 @@ export type PortalSettingsInputMpesaMode = typeof PortalSettingsInputMpesaMode[k
 
 export const PortalSettingsInputMpesaMode = {
   manual: 'manual',
-  daraja: 'daraja',
 } as const;

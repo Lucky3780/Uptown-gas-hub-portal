@@ -637,9 +637,9 @@ export const GetAdminSettingsResponse = zod.object({
 export const UpdateAdminSettingsBody = zod.object({
   "minimumPayoutKES": zod.int().min(1),
   "referralBaseUrl": zod.url(),
-  "whatsappProvider": zod.enum(['wa_me', 'meta_cloud']),
+  "whatsappProvider": zod.enum(['wa_me']),
   "whatsappEnabled": zod.boolean(),
-  "mpesaMode": zod.enum(['manual', 'daraja'])
+  "mpesaMode": zod.enum(['manual'])
 })
 
 export const UpdateAdminSettingsResponse = zod.object({

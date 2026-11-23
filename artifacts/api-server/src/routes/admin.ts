@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { and, asc, count, desc, eq, gte, inArray, sql, sum } from "drizzle-orm";
+import { and, asc, count, desc, eq, gte, inArray, lt, sql, sum } from "drizzle-orm";
 import {
   db,
   affiliatesTable,
@@ -450,7 +450,12 @@ router.patch(
           ];
           if (tier.period === "monthly") {
             const refillMonth = `${refill.refillDate.slice(0, 7)}-01`;
-            conditions.push(gte(refillsTable.refillDate, refillMonth));
+            const nextMonth = new Date(`${refillMonth}T00:00:00.000Z`);
+            nextMonth.setUTCMonth(nextMonth.getUTCMonth() + 1);
+            conditions.push(
+              gte(refillsTable.refillDate, refillMonth),
+              lt(refillsTable.refillDate, nextMonth.toISOString().slice(0, 10)),
+            );
           }
           const [totals] = await tx
             .select({
@@ -773,6 +778,21 @@ router.patch(
       if (before.status === "paid" || before.status === "rejected") {
         return { conflict: "This payout has already been closed." };
       }
+      if (
+        before.status === "pending" &&
+        body.data.status === "paid"
+      ) {
+        return {
+          conflict:
+            "Approve the payout request before recording the manual payment.",
+        };
+      }
+      if (
+        before.status === "approved" &&
+        body.data.status === "approved"
+      ) {
+        return { conflict: "This payout has already been approved." };
+      }
       const [updated] = await tx
         .update(payoutsTable)
         .set({
@@ -902,33 +922,6 @@ router.put(
       res.status(400).json({ error: "The portal URL must use HTTPS." });
       return;
     }
-    const whatsappConfigured = Boolean(
-      process.env.WHATSAPP_ACCESS_TOKEN &&
-        process.env.WHATSAPP_PHONE_NUMBER_ID,
-    );
-    if (body.data.whatsappProvider === "meta_cloud" && !whatsappConfigured) {
-      res.status(400).json({
-        error:
-          "Meta WhatsApp is not connected. Use wa.me links or configure the provider credentials first.",
-      });
-      return;
-    }
-    const mpesaConfigured = Boolean(
-      process.env.MPESA_CONSUMER_KEY &&
-        process.env.MPESA_CONSUMER_SECRET &&
-        process.env.MPESA_SHORTCODE &&
-        process.env.MPESA_INITIATOR_NAME &&
-        process.env.MPESA_SECURITY_CREDENTIAL &&
-        process.env.MPESA_RESULT_URL &&
-        process.env.MPESA_TIMEOUT_URL,
-    );
-    if (body.data.mpesaMode === "daraja" && !mpesaConfigured) {
-      res.status(400).json({
-        error:
-          "Daraja payout credentials and callback URLs are not configured. Manual M-Pesa marking remains available.",
-      });
-      return;
-    }
     const [before] = await db.select().from(portalSettingsTable).limit(1);
     const [updated] = await db
       .insert(portalSettingsTable)
@@ -936,18 +929,18 @@ router.put(
         id: 1,
         minimumPayoutKES: body.data.minimumPayoutKES,
         referralBaseUrl: referralUrl.origin,
-        whatsappProvider: body.data.whatsappProvider,
+        whatsappProvider: "wa_me",
         whatsappEnabled: body.data.whatsappEnabled,
-        mpesaMode: body.data.mpesaMode,
+        mpesaMode: "manual",
       })
       .onConflictDoUpdate({
         target: portalSettingsTable.id,
         set: {
           minimumPayoutKES: body.data.minimumPayoutKES,
           referralBaseUrl: referralUrl.origin,
-          whatsappProvider: body.data.whatsappProvider,
+          whatsappProvider: "wa_me",
           whatsappEnabled: body.data.whatsappEnabled,
-          mpesaMode: body.data.mpesaMode,
+          mpesaMode: "manual",
           updatedAt: new Date(),
         },
       })

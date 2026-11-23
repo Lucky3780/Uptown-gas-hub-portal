@@ -439,7 +439,6 @@ export type PortalSettingsInputWhatsappProvider = typeof PortalSettingsInputWhat
 
 export const PortalSettingsInputWhatsappProvider = {
   wa_me: 'wa_me',
-  meta_cloud: 'meta_cloud',
 } as const;
 
 export type PortalSettingsInputMpesaMode = typeof PortalSettingsInputMpesaMode[keyof typeof PortalSettingsInputMpesaMode];
@@ -447,7 +446,6 @@ export type PortalSettingsInputMpesaMode = typeof PortalSettingsInputMpesaMode[k
 
 export const PortalSettingsInputMpesaMode = {
   manual: 'manual',
-  daraja: 'daraja',
 } as const;
 
 export interface PortalSettingsInput {

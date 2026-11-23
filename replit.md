@@ -1,45 +1,36 @@
-# [Project name]
+# Uptown Gas Hub Affiliate Portal
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+An affiliate portal for managing partner applications, LPG refill referrals, commissions, and payout records.
 
-## Run & Operate
+## Run & operate
 
-- `pnpm --filter @workspace/api-server run dev` — run the API server (port 5000)
-- `pnpm run typecheck` — full typecheck across all packages
-- `pnpm run build` — typecheck + build all packages
-- `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
-- `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
-- Required env: `DATABASE_URL` — Postgres connection string
+- Web portal: `pnpm --filter @workspace/uptown-affiliate-portal run dev`
+- API server: `pnpm --filter @workspace/api-server run dev`
+- Full typecheck: `pnpm run typecheck`
+- Build: `pnpm run build`
+- Regenerate API types: `pnpm run --filter @workspace/api-spec codegen`
+- Push schema to the development database only: `pnpm --filter @workspace/db run push`
+- Run generated migrations: `pnpm --filter @workspace/db run migrate`
+- Seed tiers, settings, and an optional bootstrap administrator: `pnpm --filter @workspace/api-server run seed`
 
-## Stack
+## Stack and source of truth
 
-- pnpm workspaces, Node.js 24, TypeScript 5.9
-- API: Express 5
-- DB: PostgreSQL + Drizzle ORM
-- Validation: Zod (`zod/v4`), `drizzle-zod`
-- API codegen: Orval (from OpenAPI spec)
-- Build: esbuild (CJS bundle)
+- React, Vite, TypeScript, and generated React Query clients for the web app.
+- Express API in `artifacts/api-server`.
+- PostgreSQL and Drizzle schema in `lib/db/src/schema`.
+- OpenAPI contract in `lib/api-spec/openapi.yaml`; regenerate hooks and Zod validators after every contract change.
+- Product setup and runbook: `README.md`; endpoint summary: `docs/API.md`.
 
-## Where things live
+## Current product scope
 
-_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
+- Affiliate signup, admin approval, referral codes and share cards, refill entry/review, commission ledger, tier settings, leaderboard, CSV export, notification queue, and manual payout records.
+- Password reset email requires SMTP configuration.
+- WhatsApp follow-ups use a queue and click-to-chat links; sending remains manual.
+- M-Pesa payouts are manual: admins record the transaction reference after confirming payment outside the portal. Automated payment-provider integration is deferred until the core portal is finished and separately approved.
 
-## Architecture decisions
+## Important operating rules
 
-_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
-
-## Product
-
-_Describe the high-level user-facing capabilities of this app once they exist._
-
-## User preferences
-
-_Populate as you build — explicit user instructions worth remembering across sessions._
-
-## Gotchas
-
-_Populate as you build — sharp edges, "always run X before Y" rules._
-
-## Pointers
-
-- See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and package details
+- There is no default administrator login. Bootstrap one with `UPTOWN_ADMIN_EMAIL`, `UPTOWN_ADMIN_PHONE`, and `UPTOWN_ADMIN_PASSWORD` in Replit Secrets, then run the seed command once. Never put passwords in chat or source files.
+- Seeded tier rates, refill thresholds, and the KES 1,000 minimum are example starting values. The business owner must confirm them before accepting real sales or payout requests.
+- Use the development schema push only for development. Generate and review migrations for any production database changes.
+- Node.js and PostgreSQL are required. Use a VPS or a cPanel plan that supports long-running Node.js services and PostgreSQL; a PHP-only shared hosting plan is not sufficient.

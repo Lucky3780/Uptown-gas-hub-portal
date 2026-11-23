@@ -11,5 +11,4 @@ export type PortalSettingsInputWhatsappProvider = typeof PortalSettingsInputWhat
 
 export const PortalSettingsInputWhatsappProvider = {
   wa_me: 'wa_me',
-  meta_cloud: 'meta_cloud',
 } as const;

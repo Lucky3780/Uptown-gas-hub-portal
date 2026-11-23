@@ -448,7 +448,7 @@ paths:
           required: false
           schema:
             type: string
-            enum: [pending, approved, processing, rejected, paid, all]
+            enum: [pending, approved, rejected, paid, all]
       responses:
         "200":
           description: Payout requests
@@ -524,54 +524,6 @@ paths:
             text/csv:
               schema:
                 type: string
-  /mpesa/b2c/result:
-    post:
-      operationId: receiveMpesaB2cResult
-      tags: [admin]
-      summary: Receive an authenticated Daraja B2C payment result
-      parameters:
-        - in: query
-          name: token
-          required: true
-          schema:
-            type: string
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/MpesaB2cResultInput"
-      responses:
-        "200":
-          description: Callback accepted
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ActionResult"
-  /mpesa/b2c/timeout:
-    post:
-      operationId: receiveMpesaB2cTimeout
-      tags: [admin]
-      summary: Receive a Daraja B2C queue timeout notification
-      parameters:
-        - in: query
-          name: token
-          required: true
-          schema:
-            type: string
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/MpesaB2cTimeoutInput"
-      responses:
-        "200":
-          description: Callback acknowledged
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ActionResult"
 components:
   schemas:
     HealthStatus:
@@ -939,7 +891,7 @@ components:
           type: string
         status:
           type: string
-          enum: [pending, approved, processing, rejected, paid]
+          enum: [pending, approved, rejected, paid]
         transactionReference:
           type: ["string", "null"]
         rejectionReason:
@@ -1040,32 +992,11 @@ components:
           format: uri
         whatsappProvider:
           type: string
-          enum: [wa_me, meta_cloud]
+          enum: [wa_me]
         whatsappEnabled:
           type: boolean
         mpesaMode:
           type: string
-          enum: [manual, daraja]
+          enum: [manual]
       required: [minimumPayoutKES, referralBaseUrl, whatsappProvider, whatsappEnabled, mpesaMode]
-    MpesaB2cResultInput:
-      type: object
-      properties:
-        Result:
-          type: object
-          properties:
-            ResultCode:
-              type: integer
-            ResultDesc:
-              type: string
-            OriginatorConversationID:
-              type: string
-            ConversationID:
-              type: string
-            TransactionID:
-              type: ["string", "null"]
-          required: [ResultCode, ResultDesc, OriginatorConversationID]
-      required: [Result]
-    MpesaB2cTimeoutInput:
-      type: object
-      additionalProperties: true
 
