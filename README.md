@@ -20,7 +20,7 @@ Automated M-Pesa/Daraja integration is intentionally out of scope for the curren
 This is a pnpm workspace with a React/Vite web app, Express API, and PostgreSQL database.
 
 1. Install the workspace dependencies with `pnpm install`.
-2. Configure the environment variables described in `.env.example`. In Replit, use the project's Secrets and environment-variable tools rather than committing a local `.env`.
+2. Configure the environment variables described in `.env.example`. 
 3. Push the Drizzle schema to the development database: `pnpm --filter @workspace/db run push`.
 4. Seed the initial tiers and settings: `pnpm --filter @workspace/api-server run seed`.
 5. Start the managed web and API workflows, or run them with:
@@ -33,7 +33,6 @@ Run `pnpm run typecheck` and `pnpm run build` before delivery.
 
 There are no default administrator credentials. Public registration only creates a pending affiliate account.
 
-To create an administrator, add these variables in Replit Secrets:
 
 - `UPTOWN_ADMIN_EMAIL`
 - `UPTOWN_ADMIN_PHONE` (Kenyan mobile number)
@@ -51,7 +50,7 @@ Seeded defaults are examples, not approved commercial terms:
 - Platinum: 5% from 50 lifetime refills
 - Minimum payout: KES 1,000
 
-Review the tiers and minimum payout in the admin portal before accepting real transactions. Configure a strong `SESSION_SECRET`, a public HTTPS `PORTAL_PUBLIC_URL`, and SMTP delivery for password-reset emails. Keep the administrator credentials and database credentials in Replit Secrets.
+Review the tiers and minimum payout in the admin portal before accepting real transactions. Configure a strong `SESSION_SECRET`, a public HTTPS `PORTAL_PUBLIC_URL`, and SMTP delivery for password-reset emails. Keep the administrator credentials and database credentials in  Secrets.
 
 ## Database and deployment
 

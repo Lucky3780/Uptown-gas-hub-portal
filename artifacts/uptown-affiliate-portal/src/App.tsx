@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react';
 import { QueryClient, QueryClientProvider, useQueryClient } from '@tanstack/react-query';
 import { Link, Route, Switch, useLocation } from 'wouter';
-import { Activity, ArrowUpRight, BarChart3, Check, ChevronRight, CircleHelp, Clipboard, CreditCard, Download, Flame, Gauge, Home, LogOut, Plus, QrCode as QrIcon, RefreshCw, Settings, Share2, ShieldCheck, Users, Wallet, X } from 'lucide-react';
+import { Activity, ArrowUpRight, BarChart3, Check, ChevronRight, CircleHelp, Clipboard, CreditCard, Download, Gauge, Home, LogOut, Plus, QrCode as QrIcon, RefreshCw, Settings, Share2, ShieldCheck, Users, Wallet, X } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import {
   getGetAdminSettingsQueryKey, getGetCsrfTokenQueryKey, getGetCurrentUserQueryKey, getGetDashboardQueryKey,
   getGetLeaderboardQueryKey, getExportAdminReportQueryKey, getListAffiliatesQueryKey, getListAllPayoutsQueryKey, getListAllSalesQueryKey,
   getListMyCommissionsQueryKey, getListMyNotificationsQueryKey, getListMyPayoutsQueryKey, getListMySalesQueryKey,
-  getListTiersQueryKey, useCreateRefill, useExportAdminReport, useGetAdminSettings, useGetCsrfToken, useGetCurrentUser, useHealthCheck,
+  getListTiersQueryKey, setSessionFetchConfig, useCreateRefill, useExportAdminReport, useGetAdminSettings, useGetCsrfToken, useGetCurrentUser, useHealthCheck,
   useGetDashboard, useGetLeaderboard, useListAffiliates, useListAllPayouts, useListAllSales, useListMyCommissions,
   useListMyNotifications, useListMyPayouts, useListMySales, useListTiers, useLoginUser, useLogoutUser, useRegisterAffiliate,
   useRequestPasswordReset, useRequestPayout, useResetPassword, useReviewAffiliate, useReviewPayout, useReviewRefill,
@@ -16,28 +16,18 @@ import {
 import type { Affiliate, Commission, Notification, Payout, PortalUser, Refill, Tier } from '@workspace/api-client-react';
 
 const queryClient = new QueryClient({ defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: false } } });
-let csrfValue = '';
-let fetchWrapped = false;
+setSessionFetchConfig({ csrfToken: null, credentials: 'include' });
 const currency = (n?: number | null) => new Intl.NumberFormat('en-KE', { style: 'currency', currency: 'KES', maximumFractionDigits: 0 }).format(n || 0);
 const date = (s?: string | null) => s ? new Intl.DateTimeFormat('en-KE', { dateStyle: 'medium' }).format(new Date(s)) : '—';
 const errorText = (e: unknown) => e instanceof Error ? e.message.replace(/^HTTP \d+[^:]*:\s*/, '') : 'Something went wrong. Please try again.';
+const authPaths = ['/login', '/register', '/forgot-password', '/reset-password'];
+const brandLogo = `${import.meta.env.BASE_URL}images/logo.png`;
 
 function FetchSetup() {
   const token = useGetCsrfToken({ query: { queryKey: getGetCsrfTokenQueryKey(), staleTime: 5 * 60_000 } });
   useEffect(() => {
-    if (token.data?.token) csrfValue = token.data.token;
+    setSessionFetchConfig({ csrfToken: token.data?.token ?? null, credentials: 'include' });
   }, [token.data]);
-  useEffect(() => {
-    if (fetchWrapped || typeof window === 'undefined') return;
-    const nativeFetch = window.fetch.bind(window);
-    window.fetch = (input: RequestInfo | URL, init?: RequestInit) => {
-      const method = (init?.method || (input instanceof Request ? input.method : 'GET')).toUpperCase();
-      const headers = new Headers(init?.headers || (input instanceof Request ? input.headers : undefined));
-      if (!['GET', 'HEAD', 'OPTIONS'].includes(method) && csrfValue) headers.set('X-CSRF-Token', csrfValue);
-      return nativeFetch(input, { ...init, credentials: 'include', headers });
-    };
-    fetchWrapped = true;
-  }, []);
   return null;
 }
 
@@ -65,11 +55,11 @@ function Shell({ user, children }: { user: PortalUser; children: React.ReactNode
   const links = user.role === 'admin' ? adminLinks : affiliateLinks;
   const doLogout = () => logout.mutate(undefined, { onSuccess: () => { query.clear(); setPath('/login'); }, onError: e => notify(errorText(e)) });
   return <div className="shell">
-    <aside className="side"><div className="brand"><span className="brand-mark"><Flame size={19} /></span><span>uptown<br /><span style={{ fontSize: 10, letterSpacing: '.12em', opacity: .72 }}>GAS HUB</span></span></div>
+    <aside className="side"><div className="brand"><img className="brand-logo" src={brandLogo} alt="" width="52" height="52" /><span>uptown<br /><span style={{ fontSize: 10, letterSpacing: '.12em', opacity: .72 }}>GAS HUB</span></span></div>
       <div><div className="nav-label">Workspace</div><nav className="nav-group">{links.map(({ href, label, icon: Icon }) => <Link href={href} key={href} className={`nav-item ${path === href ? 'active' : ''}`}><Icon size={17} />{label}</Link>)}</nav></div>
-      <div style={{ marginTop: 'auto' }}><div className="nav-label">Signed in as</div><div style={{ padding: '7px 12px 16px', fontWeight: 600, fontSize: 13 }}>{user.name}<div style={{ color: '#9db4aa', fontSize: 11, marginTop: 3 }}>{user.role === 'admin' ? 'Operations admin' : `${user.status} partner`}</div></div><button className="nav-item" onClick={doLogout}><LogOut size={16} /> Sign out</button></div>
+      <div style={{ marginTop: 'auto' }}><div className="nav-label">Signed in as</div><div style={{ padding: '7px 12px 16px', fontWeight: 600, fontSize: 13 }}>{user.name}<div style={{ color: '#aab9d2', fontSize: 11, marginTop: 3 }}>{user.role === 'admin' ? 'Operations admin' : `${user.status} partner`}</div></div><button className="nav-item" onClick={doLogout}><LogOut size={16} /> Sign out</button></div>
     </aside>
-    <header className="mobile-head"><div className="brand" style={{ padding: 0 }}><span className="brand-mark"><Flame size={18} /></span> Uptown Gas Hub</div><button aria-label="Sign out" className="nav-item" onClick={doLogout}><LogOut size={17} /></button></header>
+    <header className="mobile-head"><div className="brand" style={{ padding: 0 }}><img className="brand-logo" src={brandLogo} alt="" width="40" height="40" /> Uptown Gas Hub</div><button aria-label="Sign out" className="nav-item" onClick={doLogout}><LogOut size={17} /></button></header>
     <nav className="mobile-nav">{links.map(({ href, label, icon: Icon }) => <Link href={href} key={href} className={`nav-item ${path === href ? 'active' : ''}`}><Icon size={15} />{label}</Link>)}</nav>
     <main className="main"><div className="row no-print" style={{ marginBottom: 20, justifyContent: 'flex-end' }}><div className="subtle"><ShieldCheck size={13} style={{ verticalAlign: 'middle', marginRight: 5 }} />Secure partner workspace</div></div>{children}</main>
   </div>;
@@ -78,9 +68,9 @@ function Shell({ user, children }: { user: PortalUser; children: React.ReactNode
 function AuthFrame({ children, intro = 'Better energy, closer to home.' }: { children: React.ReactNode; intro?: string }) {
   return <div className="auth-frame">
     <section className="auth-aside">
-      <div className="brand" style={{ padding: 0 }}><span className="brand-mark"><Flame size={19} /></span> UPTOWN GAS HUB</div>
-      <div className="auth-copy"><div className="eyebrow" style={{ color: '#a9beb4' }}>LOCAL PARTNERS. REAL IMPACT.</div><h1 className="display" style={{ fontSize: 'clamp(34px,5.5vw,64px)', lineHeight: 1.03, margin: '17px 0', maxWidth: 570 }}>{intro}</h1><p style={{ color: '#bac9c2', maxWidth: 400, lineHeight: 1.7 }}>Earn for connecting your neighbours with reliable LPG refills. Track every sale, commission and payout in one place.</p></div>
-      <div className="subtle auth-footer" style={{ color: '#a9beb4' }}>Uptown Gas Hub · Kenya</div>
+      <div className="brand" style={{ padding: 0 }}><img className="brand-logo" src={brandLogo} alt="" width="52" height="52" /> UPTOWN GAS HUB</div>
+      <div className="auth-copy"><div className="eyebrow" style={{ color: '#b7c8e3' }}>LOCAL PARTNERS. REAL IMPACT.</div><h1 className="display" style={{ fontSize: 'clamp(34px,5.5vw,64px)', lineHeight: 1.03, margin: '17px 0', maxWidth: 570 }}>{intro}</h1><p style={{ color: '#c4d1e7', maxWidth: 400, lineHeight: 1.7 }}>Earn for connecting your neighbours with reliable LPG refills. Track every sale, commission and payout in one place.</p></div>
+      <div className="subtle auth-footer" style={{ color: '#b7c8e3' }}>Uptown Gas Hub · Kenya</div>
     </section>
     <section className="auth-form-panel"><div className="auth-form-inner">{children}</div></section>
   </div>;
@@ -88,7 +78,7 @@ function AuthFrame({ children, intro = 'Better energy, closer to home.' }: { chi
 function Login() {
   const [location, setLocation] = useLocation(); const login = useLoginUser(); const [error, setError] = useState('');
   return <AuthFrame><div className="eyebrow">PARTNER PORTAL</div><h1 className="page-title" style={{ marginBottom: 8 }}>Welcome back</h1><p className="muted" style={{ marginBottom: 26 }}>Sign in to manage your neighborhood referrals.</p>
-    {error && <div className="pill rejected" style={{ marginBottom: 15, fontSize: 12 }}>{error}</div>}
+    {error && <div className="pill rejected" role="alert" style={{ marginBottom: 15, fontSize: 12 }}>{error}</div>}
     <form className="stack" onSubmit={e => { e.preventDefault(); const f = new FormData(e.currentTarget); setError(''); login.mutate({ data: { email: String(f.get('email')), password: String(f.get('password')) } }, { onSuccess: () => setLocation('/dashboard'), onError: err => setError(errorText(err)) }); }}>
       <Field name="email" type="email" label="Email address" required autoComplete="email" data-testid="input-email" /><Field name="password" type="password" label="Password" required autoComplete="current-password" data-testid="input-password" />
       <Link href="/forgot-password" className="subtle" style={{ justifySelf: 'end', color: 'hsl(var(--primary))', textDecoration: 'none' }}>Forgot password?</Link><Button type="submit" disabled={login.isPending}>{login.isPending ? 'Signing in…' : 'Sign in'} <ChevronRight size={16} /></Button>
@@ -116,12 +106,12 @@ function ResetPassword() {
 function ReferralCard({ code, baseUrl }: { code: string | null; baseUrl?: string }) {
   const [copied, setCopied] = useState(false); const url = code ? `${(baseUrl || window.location.origin).replace(/\/$/, '')}/?ref=${encodeURIComponent(code)}` : '';
   const copy = async () => { if (!url) return; try { await navigator.clipboard.writeText(url); setCopied(true); notify('Referral link copied'); setTimeout(() => setCopied(false), 1500); } catch { notify('Copy is not available on this device'); } };
-  return <div className="hero-panel"><div className="row" style={{ position: 'relative', zIndex: 1, alignItems: 'center' }}><div style={{ flex: 1 }}><div className="eyebrow" style={{ color: '#afc5bb' }}>YOUR PERSONAL REFERRAL</div><h2 className="display" style={{ margin: '10px 0 7px' }}>Every refill starts with a neighbour.</h2><p>Share your link. Approved refills earn your commission.</p><div className="row" style={{ justifyContent: 'flex-start', gap: 20, marginTop: 22, flexWrap: 'wrap' }}><div><div className="subtle" style={{ color: '#b9cbc3' }}>Your partner code</div><div className="referral-code">{code || 'Pending approval'}</div></div><div className="row no-print" style={{ gap: 8 }}><Button className="secondary" disabled={!code} onClick={copy}>{copied ? <Check size={15} /> : <Clipboard size={15} />}{copied ? 'Copied' : 'Copy link'}</Button><Button className="ghost" style={{ color: 'white', borderColor: '#557166' }} onClick={() => window.print()}><QrCode size={15} /> Print share card</Button></div></div>{url && <div className="subtle" style={{ marginTop: 12, color: '#c0d0c8', wordBreak: 'break-all' }}>{url}</div>}</div>{code && <div className="qr-print" style={{ background: '#fff', padding: 7, borderRadius: 11, flexShrink: 0 }}><QrCode value={url} /><div style={{ color: '#173d34', fontSize: 9, fontWeight: 700, textAlign: 'center', marginTop: 3 }}>{code}</div></div>}</div></div>;
+  return <div className="hero-panel"><div className="row" style={{ position: 'relative', zIndex: 1, alignItems: 'center' }}><div style={{ flex: 1 }}><div className="eyebrow" style={{ color: '#c0cfea' }}>YOUR PERSONAL REFERRAL</div><h2 className="display" style={{ margin: '10px 0 7px' }}>Every refill starts with a neighbour.</h2><p>Share your link. Approved refills earn your commission.</p><div className="row" style={{ justifyContent: 'flex-start', gap: 20, marginTop: 22, flexWrap: 'wrap' }}><div><div className="subtle" style={{ color: '#c4d1e7' }}>Your partner code</div><div className="referral-code">{code || 'Pending approval'}</div></div><div className="row no-print" style={{ gap: 8 }}><Button className="secondary" disabled={!code} onClick={copy}>{copied ? <Check size={15} /> : <Clipboard size={15} />}{copied ? 'Copied' : 'Copy link'}</Button><Button className="ghost" style={{ color: 'white', borderColor: '#6f83a5' }} onClick={() => window.print()}><QrCode size={15} /> Print share card</Button></div></div>{url && <div className="subtle" style={{ marginTop: 12, color: '#cbd8ed', wordBreak: 'break-all' }}>{url}</div>}</div>{code && <div className="qr-print" style={{ background: '#fff', padding: 7, borderRadius: 11, flexShrink: 0 }}><QrCode value={url} /><div style={{ color: '#152441', fontSize: 9, fontWeight: 700, textAlign: 'center', marginTop: 3 }}>{code}</div></div>}</div></div>;
 }
 function Metric({ label, value, foot, icon: Icon }: { label: string; value: string; foot?: string; icon: typeof Activity }) { return <div className="card stat-card"><div className="row"><span className="eyebrow">{label}</span><Icon size={17} color="hsl(var(--primary))" /></div><div className="stat-value">{value}</div><div className="subtle">{foot}</div></div>; }
 function QrCode({ value, size: iconSize }: { value?: string; size?: number }) {
   if (!value) return <QrIcon size={iconSize || 15} />;
-  return <QRCodeSVG value={value} size={iconSize || 112} level="M" includeMargin title="QR code for your referral link" fgColor="#173d34" bgColor="#ffffff" />;
+  return <QRCodeSVG value={value} size={iconSize || 112} level="M" includeMargin title="QR code for your referral link" fgColor="#152441" bgColor="#ffffff" />;
 }
 function RefillTable({ rows, admin, review }: { rows: Refill[]; admin?: boolean; review?: (id: string, status: 'approved' | 'voided') => void }) {
   return <div className="table-wrap"><table><thead><tr><th>Customer / partner</th><th>Refill</th><th>Sale value</th><th>Commission</th><th>Status</th><th>Date</th>{admin && <th>Review</th>}</tr></thead><tbody>{rows.map(r => <tr key={r.id}><td><strong>{r.customerName}</strong><div className="subtle">{admin ? r.affiliateName : r.referralCode}</div></td><td>{r.litres} L</td><td>{currency(r.amountKES)}</td><td>{currency(r.commissionKES)} <span className="subtle">({r.commissionPercent}%)</span></td><td><Status value={r.status} /></td><td>{date(r.refillDate)}</td>{admin && <td>{r.status === 'pending' && <div className="row"><button aria-label="Approve refill" className="btn" onClick={() => review?.(r.id, 'approved')}><Check size={14} /></button><button aria-label="Void refill" className="btn danger" onClick={() => review?.(r.id, 'voided')}><X size={14} /></button></div>}</td>}</tr>)}</tbody></table></div>;
@@ -144,7 +134,7 @@ function DashboardPage({ user }: { user: PortalUser }) {
     {refillOpen && <Modal title="Record a refill" close={() => setRefillOpen(false)}><RefillForm code={user.referralCode || ''} onDone={() => { setRefillOpen(false); dash.refetch(); }} /></Modal>}
   </div>;
 }
-function Modal({ title, close, children }: { title: string; close: () => void; children: React.ReactNode }) { return <div onClick={close} style={{ position: 'fixed', inset: 0, zIndex: 50, background: '#10241fb3', display: 'grid', placeItems: 'center', padding: 16 }}><div className="card animate-in" onClick={e => e.stopPropagation()} style={{ width: 'min(100%,560px)', maxHeight: '90dvh', overflow: 'auto' }}><div className="section-head"><h2>{title}</h2><button className="btn ghost" onClick={close}><X size={16} /></button></div>{children}</div></div>; }
+function Modal({ title, close, children }: { title: string; close: () => void; children: React.ReactNode }) { return <div onClick={close} style={{ position: 'fixed', inset: 0, zIndex: 50, background: '#111a2db3', display: 'grid', placeItems: 'center', padding: 16 }}><div className="card animate-in" onClick={e => e.stopPropagation()} style={{ width: 'min(100%,560px)', maxHeight: '90dvh', overflow: 'auto' }}><div className="section-head"><h2>{title}</h2><button className="btn ghost" onClick={close}><X size={16} /></button></div>{children}</div></div>; }
 function RefillForm({ code = '', onDone }: { code?: string; onDone: () => void }) {
   const create = useCreateRefill(); const query = useQueryClient();
   return <form className="form-grid" onSubmit={e => { e.preventDefault(); const f = new FormData(e.currentTarget); create.mutate({ data: { referralCode: String(f.get('referralCode')), customerName: String(f.get('customerName')), customerPhone: String(f.get('customerPhone') || ''), litres: Number(f.get('litres')), amountKES: Number(f.get('amountKES')), refillDate: String(f.get('refillDate')), notes: String(f.get('notes') || '') } }, { onSuccess: () => { [getListAllSalesQueryKey(), getListMySalesQueryKey(), getGetDashboardQueryKey()].forEach(queryKey => query.invalidateQueries({ queryKey })); notify('Refill recorded for review'); onDone(); }, onError: err => notify(errorText(err)) }); }}>
@@ -239,16 +229,35 @@ function SettingsPage() {
 }
 
 function Portal() {
-  const [path, setPath] = useLocation(); const userQuery = useGetCurrentUser({ query: { queryKey: getGetCurrentUserQueryKey(), retry: false } });
+  const [path, setPath] = useLocation();
+  const isAuthPath = authPaths.includes(path);
+  const userQuery = useGetCurrentUser({ query: { queryKey: getGetCurrentUserQueryKey(), retry: false, enabled: !isAuthPath } });
   const health = useHealthCheck({ query: { staleTime: 60_000 } });
-  if (['/login', '/register', '/forgot-password', '/reset-password'].includes(path)) {
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [path]);
+  useEffect(() => {
+    if (userQuery.isLoading || isAuthPath) return;
+    const user = userQuery.data;
+    if (userQuery.isError || !user) {
+      if (path !== '/') setPath('/login');
+      return;
+    }
+    if (
+      (user.status === 'pending' && user.role !== 'admin' && !['/', '/dashboard', '/sales'].includes(path)) ||
+      (path.startsWith('/admin/') && user.role !== 'admin')
+    ) {
+      setPath('/dashboard');
+    }
+  }, [isAuthPath, path, setPath, userQuery.data, userQuery.isError, userQuery.isLoading]);
+  if (isAuthPath) {
     if (path === '/login') return <Login />; if (path === '/register') return <Register />; if (path === '/forgot-password') return <ForgotPassword />; return <ResetPassword />;
   }
   if (userQuery.isLoading) return <div className="main" style={{ maxWidth: 840, margin: 'auto', paddingTop: 100 }}><Loading /></div>;
-  if (userQuery.isError || !userQuery.data) { if (path !== '/') setPath('/login'); return <Login />; }
+  if (userQuery.isError || !userQuery.data) return <Login />;
   const user = userQuery.data;
-  if (user.status === 'pending' && user.role !== 'admin' && !['/dashboard', '/sales'].includes(path)) { setPath('/dashboard'); }
-  if (path.startsWith('/admin/') && user.role !== 'admin') { setPath('/dashboard'); return <Shell user={user}><div className="card empty"><ShieldCheck size={26} /><strong>Administrator access required</strong><span>This workspace is reserved for operations administrators.</span></div></Shell>; }
+  if (user.status === 'pending' && user.role !== 'admin' && !['/', '/dashboard', '/sales'].includes(path)) return <div className="main" style={{ maxWidth: 840, margin: 'auto', paddingTop: 100 }}><Loading /></div>;
+  if (path.startsWith('/admin/') && user.role !== 'admin') return <Shell user={user}><div className="card empty"><ShieldCheck size={26} /><strong>Administrator access required</strong><span>This workspace is reserved for operations administrators.</span></div></Shell>;
   let view: React.ReactNode = <NotFoundInline goHome={() => setPath('/dashboard')} />;
   if (path === '/' || path === '/dashboard') view = <DashboardPage user={user} />;
   else if (path === '/sales') view = user.role === 'admin' ? <AdminSales /> : <AffiliateSales />;
