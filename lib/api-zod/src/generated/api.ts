@@ -143,6 +143,10 @@ export const ResetPasswordResponse = zod.object({
 /**
  * @summary Get role-specific dashboard metrics and recent activity
  */
+export const getDashboardResponseRecentRefillsItemCommissionPerRefillKESMin = 0;
+
+
+
 export const GetDashboardResponse = zod.object({
   "account": zod.object({
   "id": zod.uuid(),
@@ -177,7 +181,7 @@ export const GetDashboardResponse = zod.object({
   "status": zod.enum(['pending', 'approved', 'voided']),
   "refillDate": zod.coerce.date(),
   "commissionKES": zod.int(),
-  "commissionPercent": zod.number(),
+  "commissionPerRefillKES": zod.int().min(getDashboardResponseRecentRefillsItemCommissionPerRefillKESMin),
   "tierName": zod.string().nullable(),
   "notes": zod.string().nullable(),
   "createdAt": zod.coerce.date()
@@ -204,6 +208,10 @@ export const GetDashboardResponse = zod.object({
 /**
  * @summary List the signed-in affiliate's refills
  */
+export const listMySalesResponseCommissionPerRefillKESMin = 0;
+
+
+
 export const ListMySalesResponseItem = zod.object({
   "id": zod.uuid(),
   "affiliateId": zod.uuid(),
@@ -216,7 +224,7 @@ export const ListMySalesResponseItem = zod.object({
   "status": zod.enum(['pending', 'approved', 'voided']),
   "refillDate": zod.coerce.date(),
   "commissionKES": zod.int(),
-  "commissionPercent": zod.number(),
+  "commissionPerRefillKES": zod.int().min(listMySalesResponseCommissionPerRefillKESMin),
   "tierName": zod.string().nullable(),
   "notes": zod.string().nullable(),
   "createdAt": zod.coerce.date()
@@ -227,12 +235,16 @@ export const ListMySalesResponse = zod.array(ListMySalesResponseItem)
 /**
  * @summary List the signed-in affiliate's commission ledger
  */
+export const listMyCommissionsResponseCommissionPerRefillKESMin = 0;
+
+
+
 export const ListMyCommissionsResponseItem = zod.object({
   "id": zod.uuid(),
   "refillId": zod.uuid(),
   "customerName": zod.string(),
   "amountKES": zod.int(),
-  "commissionPercent": zod.number(),
+  "commissionPerRefillKES": zod.int().min(listMyCommissionsResponseCommissionPerRefillKESMin),
   "tierName": zod.string(),
   "status": zod.enum(['available', 'reserved', 'paid', 'voided']),
   "createdAt": zod.coerce.date()
@@ -408,6 +420,10 @@ export const ListAllSalesQueryParams = zod.object({
   "status": zod.enum(['pending', 'approved', 'voided', 'all']).optional()
 })
 
+export const listAllSalesResponseCommissionPerRefillKESMin = 0;
+
+
+
 export const ListAllSalesResponseItem = zod.object({
   "id": zod.uuid(),
   "affiliateId": zod.uuid(),
@@ -420,7 +436,7 @@ export const ListAllSalesResponseItem = zod.object({
   "status": zod.enum(['pending', 'approved', 'voided']),
   "refillDate": zod.coerce.date(),
   "commissionKES": zod.int(),
-  "commissionPercent": zod.number(),
+  "commissionPerRefillKES": zod.int().min(listAllSalesResponseCommissionPerRefillKESMin),
   "tierName": zod.string().nullable(),
   "notes": zod.string().nullable(),
   "createdAt": zod.coerce.date()
@@ -457,6 +473,10 @@ export const CreateRefillBody = zod.object({
   "notes": zod.string().max(createRefillBodyNotesMax).optional()
 })
 
+export const createRefillResponseCommissionPerRefillKESMin = 0;
+
+
+
 export const CreateRefillResponse = zod.object({
   "id": zod.uuid(),
   "affiliateId": zod.uuid(),
@@ -469,7 +489,7 @@ export const CreateRefillResponse = zod.object({
   "status": zod.enum(['pending', 'approved', 'voided']),
   "refillDate": zod.coerce.date(),
   "commissionKES": zod.int(),
-  "commissionPercent": zod.number(),
+  "commissionPerRefillKES": zod.int().min(createRefillResponseCommissionPerRefillKESMin),
   "tierName": zod.string().nullable(),
   "notes": zod.string().nullable(),
   "createdAt": zod.coerce.date()
@@ -492,6 +512,10 @@ export const ReviewRefillBody = zod.object({
   "reason": zod.string().max(reviewRefillBodyReasonMax).optional()
 })
 
+export const reviewRefillResponseCommissionPerRefillKESMin = 0;
+
+
+
 export const ReviewRefillResponse = zod.object({
   "id": zod.uuid(),
   "affiliateId": zod.uuid(),
@@ -504,7 +528,7 @@ export const ReviewRefillResponse = zod.object({
   "status": zod.enum(['pending', 'approved', 'voided']),
   "refillDate": zod.coerce.date(),
   "commissionKES": zod.int(),
-  "commissionPercent": zod.number(),
+  "commissionPerRefillKES": zod.int().min(reviewRefillResponseCommissionPerRefillKESMin),
   "tierName": zod.string().nullable(),
   "notes": zod.string().nullable(),
   "createdAt": zod.coerce.date()
@@ -514,13 +538,17 @@ export const ReviewRefillResponse = zod.object({
 /**
  * @summary Get configurable tier thresholds and rates
  */
+export const listTiersResponseCommissionPerRefillKESMin = 0;
+
+
+
 export const ListTiersResponseItem = zod.object({
   "id": zod.uuid(),
-  "name": zod.enum(['Starter', 'Silver', 'Gold', 'Platinum']),
+  "name": zod.string(),
   "sortOrder": zod.int(),
   "thresholdMetric": zod.enum(['refills', 'revenue']),
   "thresholdValue": zod.int(),
-  "commissionPercent": zod.number(),
+  "commissionPerRefillKES": zod.int().min(listTiersResponseCommissionPerRefillKESMin),
   "period": zod.enum(['monthly', 'lifetime']),
   "active": zod.boolean()
 })
@@ -528,7 +556,7 @@ export const ListTiersResponse = zod.array(ListTiersResponseItem)
 
 
 /**
- * @summary Update a tier threshold or commission rate
+ * @summary Update a tier threshold or fixed commission per refill
  */
 export const UpdateTierParams = zod.object({
   "id": zod.uuid()
@@ -536,26 +564,29 @@ export const UpdateTierParams = zod.object({
 
 export const updateTierBodyThresholdValueMin = 0;
 
-export const updateTierBodyCommissionPercentMin = 0;
-export const updateTierBodyCommissionPercentMax = 100;
+export const updateTierBodyCommissionPerRefillKESMin = 0;
 
 
 
 export const UpdateTierBody = zod.object({
   "thresholdMetric": zod.enum(['refills', 'revenue']),
   "thresholdValue": zod.int().min(updateTierBodyThresholdValueMin),
-  "commissionPercent": zod.number().min(updateTierBodyCommissionPercentMin).max(updateTierBodyCommissionPercentMax),
+  "commissionPerRefillKES": zod.int().min(updateTierBodyCommissionPerRefillKESMin),
   "period": zod.enum(['monthly', 'lifetime']),
   "active": zod.boolean()
 })
 
+export const updateTierResponseCommissionPerRefillKESMin = 0;
+
+
+
 export const UpdateTierResponse = zod.object({
   "id": zod.uuid(),
-  "name": zod.enum(['Starter', 'Silver', 'Gold', 'Platinum']),
+  "name": zod.string(),
   "sortOrder": zod.int(),
   "thresholdMetric": zod.enum(['refills', 'revenue']),
   "thresholdValue": zod.int(),
-  "commissionPercent": zod.number(),
+  "commissionPerRefillKES": zod.int().min(updateTierResponseCommissionPerRefillKESMin),
   "period": zod.enum(['monthly', 'lifetime']),
   "active": zod.boolean()
 })

@@ -59,6 +59,5 @@ export * from './tier';
 export * from './tierInput';
 export * from './tierInputPeriod';
 export * from './tierInputThresholdMetric';
-export * from './tierName';
 export * from './tierPeriod';
 export * from './tierThresholdMetric';

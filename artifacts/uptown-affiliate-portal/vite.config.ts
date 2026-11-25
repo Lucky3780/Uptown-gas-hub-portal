@@ -12,6 +12,11 @@ if (Number.isNaN(port) || port <= 0) {
 }
 
 const basePath = process.env.BASE_PATH ?? '/';
+const apiUrl = process.env.VITE_API_URL?.trim();
+
+if (process.env.NODE_ENV === 'production' && !apiUrl) {
+  throw new Error('VITE_API_URL must be set for production builds.');
+}
 
 export default defineConfig({
   base: basePath,

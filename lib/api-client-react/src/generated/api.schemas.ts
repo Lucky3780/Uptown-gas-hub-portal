@@ -126,7 +126,8 @@ export interface Refill {
   status: RefillStatus;
   refillDate: string;
   commissionKES: number;
-  commissionPercent: number;
+  /** @minimum 0 */
+  commissionPerRefillKES: number;
   /** @nullable */
   tierName: string | null;
   /** @nullable */
@@ -241,21 +242,12 @@ export interface Commission {
   refillId: string;
   customerName: string;
   amountKES: number;
-  commissionPercent: number;
+  /** @minimum 0 */
+  commissionPerRefillKES: number;
   tierName: string;
   status: CommissionStatus;
   createdAt: string;
 }
-
-export type TierName = typeof TierName[keyof typeof TierName];
-
-
-export const TierName = {
-  Starter: 'Starter',
-  Silver: 'Silver',
-  Gold: 'Gold',
-  Platinum: 'Platinum',
-} as const;
 
 export type TierThresholdMetric = typeof TierThresholdMetric[keyof typeof TierThresholdMetric];
 
@@ -275,11 +267,12 @@ export const TierPeriod = {
 
 export interface Tier {
   id: string;
-  name: TierName;
+  name: string;
   sortOrder: number;
   thresholdMetric: TierThresholdMetric;
   thresholdValue: number;
-  commissionPercent: number;
+  /** @minimum 0 */
+  commissionPerRefillKES: number;
   period: TierPeriod;
   active: boolean;
 }
@@ -304,11 +297,8 @@ export interface TierInput {
   thresholdMetric: TierInputThresholdMetric;
   /** @minimum 0 */
   thresholdValue: number;
-  /**
-     * @minimum 0
-     * @maximum 100
-     */
-  commissionPercent: number;
+  /** @minimum 0 */
+  commissionPerRefillKES: number;
   period: TierInputPeriod;
   active: boolean;
 }

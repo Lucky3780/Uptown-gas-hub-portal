@@ -416,7 +416,7 @@ paths:
     patch:
       operationId: updateTier
       tags: [admin]
-      summary: Update a tier threshold or commission rate
+      summary: Update a tier threshold or fixed commission per refill
       parameters:
         - in: path
           name: id
@@ -740,8 +740,9 @@ components:
           format: date
         commissionKES:
           type: integer
-        commissionPercent:
-          type: number
+        commissionPerRefillKES:
+          type: integer
+          minimum: 0
         tierName:
           type: ["string", "null"]
         notes:
@@ -749,7 +750,7 @@ components:
         createdAt:
           type: string
           format: date-time
-      required: [id, affiliateId, affiliateName, referralCode, customerName, customerPhone, litres, amountKES, status, refillDate, commissionKES, commissionPercent, tierName, notes, createdAt]
+      required: [id, affiliateId, affiliateName, referralCode, customerName, customerPhone, litres, amountKES, status, refillDate, commissionKES, commissionPerRefillKES, tierName, notes, createdAt]
     RefillInput:
       type: object
       properties:
@@ -801,8 +802,9 @@ components:
           type: string
         amountKES:
           type: integer
-        commissionPercent:
-          type: number
+        commissionPerRefillKES:
+          type: integer
+          minimum: 0
         tierName:
           type: string
         status:
@@ -811,7 +813,7 @@ components:
         createdAt:
           type: string
           format: date-time
-      required: [id, refillId, customerName, amountKES, commissionPercent, tierName, status, createdAt]
+      required: [id, refillId, customerName, amountKES, commissionPerRefillKES, tierName, status, createdAt]
     Tier:
       type: object
       properties:
@@ -820,7 +822,6 @@ components:
           format: uuid
         name:
           type: string
-          enum: [Starter, Silver, Gold, Platinum]
         sortOrder:
           type: integer
         thresholdMetric:
@@ -828,14 +829,15 @@ components:
           enum: [refills, revenue]
         thresholdValue:
           type: integer
-        commissionPercent:
-          type: number
+        commissionPerRefillKES:
+          type: integer
+          minimum: 0
         period:
           type: string
           enum: [monthly, lifetime]
         active:
           type: boolean
-      required: [id, name, sortOrder, thresholdMetric, thresholdValue, commissionPercent, period, active]
+      required: [id, name, sortOrder, thresholdMetric, thresholdValue, commissionPerRefillKES, period, active]
     TierInput:
       type: object
       properties:
@@ -845,16 +847,15 @@ components:
         thresholdValue:
           type: integer
           minimum: 0
-        commissionPercent:
-          type: number
+        commissionPerRefillKES:
+          type: integer
           minimum: 0
-          maximum: 100
         period:
           type: string
           enum: [monthly, lifetime]
         active:
           type: boolean
-      required: [thresholdMetric, thresholdValue, commissionPercent, period, active]
+      required: [thresholdMetric, thresholdValue, commissionPerRefillKES, period, active]
     LeaderboardEntry:
       type: object
       properties:

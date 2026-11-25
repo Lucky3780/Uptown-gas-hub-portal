@@ -71,7 +71,7 @@ export const commissionsTable = pgTable(
       .notNull()
       .references(() => refillsTable.id, { onDelete: "restrict" }),
     amountKES: integer("amount_kes").notNull(),
-    commissionBps: integer("commission_bps").notNull(),
+    commissionPerRefillKES: integer("commission_per_refill_kes").notNull(),
     tierName: text("tier_name").notNull(),
     status: commissionStatusEnum("status").notNull().default("available"),
     createdAt: timestamp("created_at", { withTimezone: true })

@@ -5,17 +5,17 @@
  * Uptown Gas Hub affiliate portal API
  * OpenAPI spec version: 0.1.0
  */
-import type { TierName } from './tierName';
 import type { TierPeriod } from './tierPeriod';
 import type { TierThresholdMetric } from './tierThresholdMetric';
 
 export interface Tier {
   id: string;
-  name: TierName;
+  name: string;
   sortOrder: number;
   thresholdMetric: TierThresholdMetric;
   thresholdValue: number;
-  commissionPercent: number;
+  /** @minimum 0 */
+  commissionPerRefillKES: number;
   period: TierPeriod;
   active: boolean;
 }

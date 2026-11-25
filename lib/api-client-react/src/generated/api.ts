@@ -2195,7 +2195,7 @@ export const getUpdateTierUrl = (id: string,) => {
 }
 
 /**
- * @summary Update a tier threshold or commission rate
+ * @summary Update a tier threshold or fixed commission per refill
  */
 export const updateTier = async (id: string,
     tierInput: TierInput, options?: Parameters<typeof customFetch>[1]): Promise<Tier> => {
@@ -2262,7 +2262,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type UpdateTierMutationVariables = {id: string;data: BodyType<TierInput>}
 
     /**
- * @summary Update a tier threshold or commission rate
+ * @summary Update a tier threshold or fixed commission per refill
  */
 export const useUpdateTier = <TError = ErrorType<unknown>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateTier>>, TError,UpdateTierMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}

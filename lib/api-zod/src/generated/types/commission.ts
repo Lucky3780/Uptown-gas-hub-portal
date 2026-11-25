@@ -12,7 +12,8 @@ export interface Commission {
   refillId: string;
   customerName: string;
   amountKES: number;
-  commissionPercent: number;
+  /** @minimum 0 */
+  commissionPerRefillKES: number;
   tierName: string;
   status: CommissionStatus;
   createdAt: Date;

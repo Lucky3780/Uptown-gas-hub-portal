@@ -57,10 +57,6 @@ function validFilter<T extends string>(
   return allowed.includes(value) ? value : undefined;
 }
 
-function commissionPercent(bps: number | null | undefined): number {
-  return (bps ?? 0) / 100;
-}
-
 async function allRefills(status?: "pending" | "approved" | "voided" | "all") {
   const rows = await db
     .select({
@@ -75,7 +71,7 @@ async function allRefills(status?: "pending" | "approved" | "voided" | "all") {
       status: refillsTable.status,
       refillDate: refillsTable.refillDate,
       commissionKES: commissionsTable.amountKES,
-      commissionBps: commissionsTable.commissionBps,
+      commissionPerRefillKES: commissionsTable.commissionPerRefillKES,
       tierName: commissionsTable.tierName,
       notes: refillsTable.notes,
       createdAt: refillsTable.createdAt,
@@ -91,7 +87,7 @@ async function allRefills(status?: "pending" | "approved" | "voided" | "all") {
     ...row,
     litres: Number(row.litres),
     commissionKES: row.commissionKES ?? 0,
-    commissionPercent: commissionPercent(row.commissionBps),
+    commissionPerRefillKES: row.commissionPerRefillKES ?? 0,
     tierName: row.tierName ?? null,
     notes: row.notes ?? null,
   }));
@@ -352,7 +348,7 @@ router.post(
         referralCode: code,
         litres: Number(refill.litres),
         commissionKES: 0,
-        commissionPercent: 0,
+        commissionPerRefillKES: 0,
         tierName: null,
       }),
     );
@@ -490,24 +486,22 @@ router.patch(
         .returning();
 
       let commissionKES = existingCommission?.amountKES ?? 0;
-      let commissionPercent = existingCommission
-        ? existingCommission.commissionBps / 100
+      let commissionPerRefillKES = existingCommission
+        ? existingCommission.commissionPerRefillKES
         : 0;
       let tierName: string | null = existingCommission?.tierName ?? null;
       if (body.data.status === "approved") {
         if (!selectedTier) {
           throw new Error("No active tier exists; configure tiers before approving sales.");
         }
-        commissionPercent = selectedTier.commissionBps / 100;
-        commissionKES = Math.floor(
-          (refill.amountKES * selectedTier.commissionBps) / 10000,
-        );
+        commissionPerRefillKES = selectedTier.commissionPerRefillKES;
+        commissionKES = commissionPerRefillKES;
         tierName = selectedTier.name;
         await tx.insert(commissionsTable).values({
           affiliateId: refill.affiliateId,
           refillId: refill.id,
           amountKES: commissionKES,
-          commissionBps: selectedTier.commissionBps,
+          commissionPerRefillKES: selectedTier.commissionPerRefillKES,
           tierName: selectedTier.name,
           status: "available",
         });
@@ -515,7 +509,7 @@ router.patch(
           refill.affiliateId,
           "sale_credited",
           "A refill was credited to your account",
-          `A ${refill.litres} L refill for KES ${refill.amountKES.toLocaleString()} has been approved. Commission: KES ${commissionKES.toLocaleString()} at ${commissionPercent}% (${selectedTier.name}).`,
+          `A ${refill.litres} L refill for KES ${refill.amountKES.toLocaleString()} has been approved. Commission: KES ${commissionKES.toLocaleString()} per refill (${selectedTier.name}).`,
           tx,
         );
         const [previous] = await tx
@@ -540,7 +534,7 @@ router.patch(
             refill.affiliateId,
             "tier_upgrade",
             `You reached ${selectedTier.name}`,
-            `Your latest approved refill moved your account to ${selectedTier.name}, with a ${commissionPercent}% commission rate.`,
+            `Your latest approved refill moved your account to ${selectedTier.name}, earning KES ${commissionPerRefillKES.toLocaleString()} per refill.`,
             tx,
           );
         }
@@ -587,7 +581,7 @@ router.patch(
             .limit(1)
         )[0]?.code,
         commissionKES,
-        commissionPercent,
+        commissionPerRefillKES,
         tierName,
       };
     });
@@ -606,7 +600,7 @@ router.patch(
         referralCode: result.referralCode,
         litres: Number(result.updated.litres),
         commissionKES: result.commissionKES,
-        commissionPercent: result.commissionPercent,
+        commissionPerRefillKES: result.commissionPerRefillKES,
         tierName: result.tierName,
         notes: result.updated.notes ?? null,
       }),
@@ -624,9 +618,9 @@ router.get(
       .orderBy(asc(tiersTable.sortOrder));
     res.json(
       ListTiersResponse.parse(
-        tiers.map(({ commissionBps, ...tier }) => ({
+        tiers.map(({ commissionPerRefillKES, ...tier }) => ({
           ...tier,
-          commissionPercent: commissionBps / 100,
+          commissionPerRefillKES,
         })),
       ),
     );
@@ -665,7 +659,7 @@ router.patch(
         .set({
           thresholdMetric: body.data.thresholdMetric,
           thresholdValue: body.data.thresholdValue,
-          commissionBps: Math.round(body.data.commissionPercent * 100),
+          commissionPerRefillKES: body.data.commissionPerRefillKES,
           period: body.data.period,
           active: body.data.active,
         })
@@ -679,14 +673,14 @@ router.patch(
         {
           thresholdMetric: before.thresholdMetric,
           thresholdValue: before.thresholdValue,
-          commissionBps: before.commissionBps,
+          commissionPerRefillKES: before.commissionPerRefillKES,
           period: before.period,
           active: before.active,
         },
         {
           thresholdMetric: row.thresholdMetric,
           thresholdValue: row.thresholdValue,
-          commissionBps: row.commissionBps,
+          commissionPerRefillKES: row.commissionPerRefillKES,
           period: row.period,
           active: row.active,
         },
@@ -697,7 +691,7 @@ router.patch(
     res.json(
       UpdateTierResponse.parse({
         ...updated,
-        commissionPercent: updated.commissionBps / 100,
+        commissionPerRefillKES: updated.commissionPerRefillKES,
       }),
     );
   },
@@ -984,7 +978,7 @@ router.get(
         refillKES: refillsTable.amountKES,
         refillStatus: refillsTable.status,
         commissionKES: commissionsTable.amountKES,
-        commissionPercent: commissionsTable.commissionBps,
+        commissionPerRefillKES: commissionsTable.commissionPerRefillKES,
         tier: commissionsTable.tierName,
       })
       .from(refillsTable)
@@ -1003,7 +997,7 @@ router.get(
       "Refill KES",
       "Status",
       "Commission KES",
-      "Commission rate %",
+      "Commission per refill KES",
       "Tier",
     ];
     const lines = [
@@ -1019,7 +1013,7 @@ router.get(
           row.refillKES,
           row.refillStatus,
           row.commissionKES ?? 0,
-          commissionPercent(row.commissionPercent),
+          row.commissionPerRefillKES ?? 0,
           row.tier ?? "",
         ]
           .map(csvCell)

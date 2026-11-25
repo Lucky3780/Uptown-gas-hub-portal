@@ -115,17 +115,21 @@ export function csrfGuard(
   const headerToken = req.get("X-CSRF-Token");
   const origin = req.get("Origin");
   const requestHost = req.get("host");
+  const configuredOrigin = process.env.APP_ORIGIN;
+  let invalidOrigin = false;
+
+  if (origin && requestHost) {
+    try {
+      invalidOrigin = configuredOrigin
+        ? new URL(origin).origin !== new URL(configuredOrigin).origin
+        : new URL(origin).host !== requestHost;
+    } catch {
+      invalidOrigin = true;
+    }
+  }
 
   if (
-    (origin &&
-      requestHost &&
-      (() => {
-        try {
-          return new URL(origin).host !== requestHost;
-        } catch {
-          return true;
-        }
-      })()) ||
+    invalidOrigin ||
     !cookieToken ||
     !headerToken ||
     !safeEqual(cookieToken, headerToken) ||

@@ -1,0 +1,7 @@
+{
+  "framework": "vite",
+  "installCommand": "pnpm install --frozen-lockfile --prod=false",
+  "buildCommand": "pnpm --filter @workspace/uptown-affiliate-portal run build",
+  "outputDirectory": "artifacts/uptown-affiliate-portal/dist/public",
+  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
+}

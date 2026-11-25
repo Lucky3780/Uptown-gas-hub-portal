@@ -20,7 +20,8 @@ export interface Refill {
   status: RefillStatus;
   refillDate: Date;
   commissionKES: number;
-  commissionPercent: number;
+  /** @minimum 0 */
+  commissionPerRefillKES: number;
   /** @nullable */
   tierName: string | null;
   /** @nullable */

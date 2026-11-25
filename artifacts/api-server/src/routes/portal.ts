@@ -173,7 +173,7 @@ async function refillRows(affiliateId?: string, limit?: number) {
       status: refillsTable.status,
       refillDate: refillsTable.refillDate,
       commissionKES: commissionsTable.amountKES,
-      commissionBps: commissionsTable.commissionBps,
+      commissionPerRefillKES: commissionsTable.commissionPerRefillKES,
       tierName: commissionsTable.tierName,
       notes: refillsTable.notes,
       createdAt: refillsTable.createdAt,
@@ -189,7 +189,7 @@ async function refillRows(affiliateId?: string, limit?: number) {
     ...row,
     litres: Number(row.litres),
     commissionKES: row.commissionKES ?? 0,
-    commissionPercent: (row.commissionBps ?? 0) / 100,
+    commissionPerRefillKES: row.commissionPerRefillKES ?? 0,
     tierName: row.tierName ?? null,
     notes: row.notes ?? null,
   }));
@@ -467,7 +467,7 @@ router.get(
         refillId: commissionsTable.refillId,
         customerName: refillsTable.customerName,
         amountKES: commissionsTable.amountKES,
-        commissionBps: commissionsTable.commissionBps,
+        commissionPerRefillKES: commissionsTable.commissionPerRefillKES,
         tierName: commissionsTable.tierName,
         status: commissionsTable.status,
         createdAt: commissionsTable.createdAt,
@@ -478,9 +478,9 @@ router.get(
       .orderBy(desc(commissionsTable.createdAt));
     res.json(
       ListMyCommissionsResponse.parse(
-        rows.map(({ commissionBps, ...row }) => ({
+        rows.map(({ commissionPerRefillKES, ...row }) => ({
           ...row,
-          commissionPercent: commissionBps / 100,
+          commissionPerRefillKES,
         })),
       ),
     );

@@ -12,11 +12,8 @@ export interface TierInput {
   thresholdMetric: TierInputThresholdMetric;
   /** @minimum 0 */
   thresholdValue: number;
-  /**
-     * @minimum 0
-     * @maximum 100
-     */
-  commissionPercent: number;
+  /** @minimum 0 */
+  commissionPerRefillKES: number;
   period: TierInputPeriod;
   active: boolean;
 }

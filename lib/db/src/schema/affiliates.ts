@@ -43,7 +43,7 @@ export const tiersTable = pgTable(
       .notNull()
       .default("refills"),
     thresholdValue: integer("threshold_value").notNull(),
-    commissionBps: integer("commission_bps").notNull(),
+    commissionPerRefillKES: integer("commission_per_refill_kes").notNull(),
     period: tierPeriodEnum("period").notNull().default("lifetime"),
     active: boolean("active").notNull().default(true),
     updatedAt: timestamp("updated_at", { withTimezone: true })
